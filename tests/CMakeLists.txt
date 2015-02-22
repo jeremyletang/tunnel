@@ -6,7 +6,7 @@ include_directories (../include)
 project (tunnel_test CXX)
 
 file (GLOB headers "*.h")
-file (GLOB sources "*.c")
+file (GLOB sources "*.cpp")
 
 set (DIRS "src")
 
@@ -21,7 +21,7 @@ endforeach ()
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu1y")
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++1y")
 endif()
 
 add_executable (tunnel_test ${sources})
