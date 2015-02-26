@@ -10,25 +10,37 @@ file (GLOB sources "*.cpp")
 
 set (DIRS "src")
 
-foreach (dir ${DIRS})
-   file (GLOB h_${dir} "${dir}/*.h")
-   file (GLOB s_${dir} "${dir}/*.cpp")
-   source_group (${dir} FILES ${s_${dir}} ${h_${dir}})
-   set (sources ${sources} ${s_${dir}})
-   set (header ${headers} ${h_${dir}})
-endforeach ()
-
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++1y")
 endif()
 
-add_executable (tunnel_test ${sources})
+add_executable (tunnel_simple src/simple.cpp)
+add_executable (tunnel_parallel src/parallel.cpp)
+add_executable (tunnel_iter src/iter.cpp)
 
-target_link_libraries (tunnel_test)
+target_link_libraries (tunnel_simple)
+target_link_libraries (tunnel_iter)
 
-set_target_properties(tunnel_test
+if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+    target_link_libraries (tunnel_parallel pthread)
+else()
+    target_link_libraries (tunnel_parallel)
+endif()
+
+
+set_target_properties(tunnel_simple
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/target"
+)
+
+set_target_properties(tunnel_parallel
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/target"
+)
+
+set_target_properties(tunnel_iter
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/target"
 )
