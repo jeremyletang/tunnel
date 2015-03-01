@@ -32,6 +32,9 @@
 
 namespace tunnel {
 
+struct closed_t {};
+const closed_t closed;
+
 // Store the result of a call to recv or try_recv
 // if the call to the function fail, state is equal to false and
 // value is a default value, otherwise state is equal to true
@@ -127,6 +130,19 @@ public:
     // if it is deleted.
     auto can_send() const -> bool { return this->queue->has_port(); }
 
+    // check if the tunnel is closed
+    auto operator==(const closed_t cls) const -> bool {
+        if (this->queue == nullptr || !this->can_send()) {
+            return true;
+        }
+        return false;
+    }
+
+    // check if the tunnel is closed
+    auto operator!=(const closed_t cls) const -> bool {
+        return !(*this == closed);
+    }
+
     // friend tunction to wich instantciate the original channel
     template <typename U>
     friend auto make() -> std::tuple<chan<U>, port<U>>;
@@ -138,6 +154,7 @@ struct port {
 
 private:
 
+    // an iterator over the element stored in the queue.
     class iterator {
 
     private:
@@ -149,12 +166,18 @@ private:
 
     public:
 
+        // facility to build end iterator
         iterator()
         : queue(nullptr), current(T()) {}
 
+        // build the iterator when queue is not empty
         iterator(std::shared_ptr<priv::shared_queue<T>> queue, T&& current)
         : queue(queue), current(std::move(current)) {}
 
+        // increment the iterator then return self
+        // if the queue is empty set it to nullptr to exit iteration
+        // if the queue is not empty move inside this->current the
+        // popped value
         auto operator++() -> iterator& {
             if (this->queue != nullptr &&
                 !this->queue->is_empty()) {
@@ -165,8 +188,10 @@ private:
             return *this;
         }
 
+        // Move the stored value out
         auto operator*() -> T&& { return std::move(this->current); }
 
+        // check if the iterator is equal to end
         auto operator!=(const iterator& rhs) const -> bool {
             if (rhs.queue == nullptr && this->queue == nullptr) {
                 return false;
@@ -176,8 +201,12 @@ private:
 
     };
 
+    // the queue wich is shared between the different channels and the
+    // port
     std::shared_ptr<priv::shared_queue<T>> queue;
 
+    // private constructor,
+    // can only be called from tunnel::make<T>()
     port(std::shared_ptr<priv::shared_queue<T>> q)
     : queue(q) {}
 
@@ -187,16 +216,24 @@ public:
     port(port& oth) = delete;
     port(const port& oth) = delete;
 
+    // move constructor, we can only have one port
     port(port&& oth)
     : queue(std::move(oth.queue)) {
         oth.queue = nullptr;
     }
 
+    // in the case of a move do nothing,
+    // but in the case of an active port, remove the port
+    // from the shared_queue
     ~port() {
         // prevent remove when std::move()
         if (this->queue != nullptr) { this->queue->rm_port(); }
     }
 
+    // try to received data from the queue,
+    // this is a non-blocking operation.
+    // this can only fail if the queue is empty or if there is
+    // no more active channels
     auto try_recv() -> recv_result<T> {
         if (this->queue->is_empty() || !this->can_recv()) {
             return recv_result<T> {T(), false};
@@ -204,6 +241,11 @@ public:
         return recv_result<T> {this->queue->pop().value, true};
     }
 
+    // received data from the queue.
+    // this is a blocking operation. while the queue can_recv
+    // we will wait to receive data. If there is data inside the queue
+    // the data is returned. This function can fail if the is no more
+    // active channels
     auto recv() -> recv_result<T> {
         while (this->can_recv()) {
             if (this->queue->is_empty()) {
@@ -215,13 +257,17 @@ public:
         return recv_result<T> {T(), false};
     }
 
-    auto iter(std::function<void(T)> f) {
+    // while the queue is not empty,
+    // this function iterate over all the elements in
+    // the queue and call the function f with each element.
+    auto iter(std::function<void(T&&)> f) {
         while (!this->queue->is_empty()) {
             auto t = this->queue->pop().value;
             f(std::move(t));
         }
     }
 
+    // return an iterator on the first message in the queue
     auto begin() const -> iterator {
         if (this->queue->is_empty()) {
             return iterator();
@@ -229,11 +275,28 @@ public:
         return iterator(this->queue, std::move(this->queue->pop().value));
     }
 
+    // return an iterator to catch the end of the messages
     auto end() const -> iterator { return iterator(); }
 
+    // check if the port can always receive data.
+    // the port cannot receive data if there is no more active channels
     auto can_recv() const -> bool { return this->queue->nb_chan() > 0; }
 
+    // return the total count of available channels for this port
     auto nb_chan() const -> int { return this->queue->nb_chan(); }
+
+    // check if the tunnel is closed
+    auto operator==(const closed_t cls) const -> bool {
+        if (this->queue == nullptr || !this->can_recv()) {
+            return true;
+        }
+        return false;
+    }
+
+    // check if the tunnel is closed
+    auto operator!=(const closed_t cls) const -> bool {
+        return !(*this == closed);
+    }
 
     // friend tunction to wich instantciate the original channel
     template <typename U>

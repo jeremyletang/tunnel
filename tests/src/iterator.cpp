@@ -20,5 +20,8 @@ int main() {
         std::cout << std::move(i) << std::endl;
     }
 
+    chan.send(std::move(6));
+    std::cout << port.recv().value << std::endl;
+
     return 0;
 }
