@@ -1,4 +1,4 @@
-# tunnel
+# tunnel [![Build Status](https://travis-ci.org/jeremyletang/tunnel.svg?branch=master)](https://travis-ci.org/jeremyletang/tunnel)
 
 Simple and lock-free channel communication in c++14
 
@@ -11,7 +11,7 @@ The library should build with clang (-std=c++1y) and gcc (-std=gnu++1y).
 ## A simple parallel example
 
 ```c++
-#include <tunnel.h>
+#include <tunnel>
 #include <iostream>
 #include <thread>
 
@@ -54,7 +54,7 @@ First you need to clone the repository and the submodule (mpsc_queue):
 
 You can build the examples using cmake
 ```
-cd tests && mkdir build && cd build && cmake .. && make
+> cd tests && mkdir build && cd build && cmake .. && make
 ```
 
 then the examples are in the folder `/tests/build/target`.
