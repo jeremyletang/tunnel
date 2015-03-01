@@ -41,3 +41,20 @@ int main() {
     return 0;
 }
 ```
+
+## Use tunnel
+
+To use tunnel you need a c++14 compiler and cmake if you want to build the example
+
+First you need to clone the repository and the submodule (mpsc_queue):
+
+```shell
+> git clone git@github.com:jeremyletang/tunnel.git --recursive
+```
+
+You can build the examples using cmake
+```
+cd tests && mkdir build && cd build && cmake .. && make
+```
+
+then the examples are in the folder `/tests/build/target`.

@@ -1,3 +1,3 @@
 [submodule "include/mpsc_queue"]
-	path = include/mpsc_queue
+	path = include/priv/mpsc_queue
 	url = https://github.com/jeremyletang/mpsc_queue.git

@@ -26,7 +26,7 @@
 #include "mpsc_queue/include/mpsc_queue.h"
 #include <iostream>
 
-namespace {
+namespace priv {
 
 // high level container for the mpsc::queue
 // and atomic value to manage the states of the differents
@@ -57,13 +57,13 @@ public:
     auto pop() -> mpsc::pop_result<T> { return this->queue.pop(); }
 
     // is the mpsc::queue empty or not
-    auto is_empty() -> bool { return this->queue.is_empty(); }
+    auto is_empty() const -> bool { return this->queue.is_empty(); }
 
     // is the port deleted or not
-    auto has_port() -> bool { return this->port_cnt.load(); }
+    auto has_port() const -> bool { return this->port_cnt.load(); }
 
     // return the count of available channels
-    auto nb_chan() -> int{ return this->chan_cnt.load(); }
+    auto nb_chan() const -> int { return this->chan_cnt.load(); }
 
     // set the port state to false, should be call once
     // at the port destruction

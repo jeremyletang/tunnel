@@ -15,9 +15,10 @@ int main() {
     chan.send(std::move(4));
     chan.send(std::move(5));
 
-    port.iter([&](auto val) {
-        std::cout << val << std::endl;
-    });
+
+    for (auto i : port) {
+        std::cout << std::move(i) << std::endl;
+    }
 
     return 0;
 }

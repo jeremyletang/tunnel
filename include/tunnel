@@ -1,3 +1,4 @@
+// <tunnel> -*- C++ -*-
 // The MIT License (MIT)
 //
 // Copyright (c) 2015 Jeremy Letang
@@ -27,7 +28,7 @@
 #include <memory>
 #include <thread>
 
-#include "shared_queue.h"
+#include "priv/shared_queue.h"
 
 namespace tunnel {
 
@@ -39,6 +40,12 @@ template <typename T>
 struct recv_result {
     T value;
     bool state;
+
+    // recv_result(recv_result&& oth)
+    // : value(std::move(oth.value)), state(std::move(oth.state)){
+    //     oth.value = T();
+    //     oth.state = false;
+    // }
 };
 
 // Return the success, or failure of a send call fron a channel
@@ -61,11 +68,11 @@ private:
 
     // the queue wich is shared between the different channels and the
     // port
-    std::shared_ptr<shared_queue<T>> queue;
+    std::shared_ptr<priv::shared_queue<T>> queue;
 
     // private constructor, wich allow us to share the queue
     // between the channels and the port
-    chan(std::shared_ptr<shared_queue<T>> q)
+    chan(std::shared_ptr<priv::shared_queue<T>> q)
     : queue(q) {
         this->queue->inc_chan();
     }
@@ -118,7 +125,7 @@ public:
     // Will the channel be able to send a message,
     // return true if the port already exist, false
     // if it is deleted.
-    auto can_send() -> bool { return this->queue->has_port(); }
+    auto can_send() const -> bool { return this->queue->has_port(); }
 
     // friend tunction to wich instantciate the original channel
     template <typename U>
@@ -131,9 +138,47 @@ struct port {
 
 private:
 
-    std::shared_ptr<shared_queue<T>> queue;
+    class iterator {
 
-    port(std::shared_ptr<shared_queue<T>> q)
+    private:
+
+        // the queue wich is shared between the different channels and the
+        // port
+        std::shared_ptr<priv::shared_queue<T>> queue;
+        T current;
+
+    public:
+
+        iterator()
+        : queue(nullptr), current(T()) {}
+
+        iterator(std::shared_ptr<priv::shared_queue<T>> queue, T&& current)
+        : queue(queue), current(std::move(current)) {}
+
+        auto operator++() -> iterator& {
+            if (this->queue != nullptr &&
+                !this->queue->is_empty()) {
+                this->current = std::move(this->queue->pop().value);
+            } else {
+                this->queue = nullptr;
+            }
+            return *this;
+        }
+
+        auto operator*() -> T&& { return std::move(this->current); }
+
+        auto operator!=(const iterator& rhs) const -> bool {
+            if (rhs.queue == nullptr && this->queue == nullptr) {
+                return false;
+            }
+            return true;
+        }
+
+    };
+
+    std::shared_ptr<priv::shared_queue<T>> queue;
+
+    port(std::shared_ptr<priv::shared_queue<T>> q)
     : queue(q) {}
 
 
@@ -177,9 +222,18 @@ public:
         }
     }
 
-    auto can_recv() -> bool { return this->queue->nb_chan() > 0; }
+    auto begin() const -> iterator {
+        if (this->queue->is_empty()) {
+            return iterator();
+        }
+        return iterator(this->queue, std::move(this->queue->pop().value));
+    }
 
-    auto nb_chan() -> int { return this->queue->nb_chan(); }
+    auto end() const -> iterator { return iterator(); }
+
+    auto can_recv() const -> bool { return this->queue->nb_chan() > 0; }
+
+    auto nb_chan() const -> int { return this->queue->nb_chan(); }
 
     // friend tunction to wich instantciate the original channel
     template <typename U>
@@ -195,7 +249,7 @@ template <class T>
 auto make() -> std::tuple<chan<T>, port<T>> {
     static_assert(std::is_default_constructible<T>::value,
                   "tunnel can only send default constructible data.");
-    auto q = std::make_shared<shared_queue<T>>();
+    auto q = std::make_shared<priv::shared_queue<T>>();
     auto c = chan<T>(q);
     auto p = port<T>(q);
     return std::move(std::make_tuple(std::move(c), std::move(p)));

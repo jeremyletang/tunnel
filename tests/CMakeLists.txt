@@ -19,9 +19,11 @@ endif()
 add_executable (tunnel_simple src/simple.cpp)
 add_executable (tunnel_parallel src/parallel.cpp)
 add_executable (tunnel_iter src/iter.cpp)
+add_executable (tunnel_iterator src/iterator.cpp)
 
 target_link_libraries (tunnel_simple)
 target_link_libraries (tunnel_iter)
+target_link_libraries (tunnel_iterator)
 
 if ("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
     target_link_libraries (tunnel_parallel pthread)
@@ -41,6 +43,11 @@ set_target_properties(tunnel_parallel
 )
 
 set_target_properties(tunnel_iter
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/target"
+)
+
+set_target_properties(tunnel_iterator
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/target"
 )
