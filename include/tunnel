@@ -32,7 +32,9 @@
 
 namespace tunnel {
 
-struct closed_t {};
+struct closed_t {
+    closed_t() {}
+};
 const closed_t closed;
 
 // Store the result of a call to recv or try_recv
@@ -79,7 +81,6 @@ private:
     : queue(q) {
         this->queue->inc_chan();
     }
-
 
 public:
 
@@ -210,7 +211,6 @@ private:
     port(std::shared_ptr<priv::shared_queue<T>> q)
     : queue(q) {}
 
-
 public:
 
     port(port& oth) = delete;
@@ -301,7 +301,6 @@ public:
     // friend tunction to wich instantciate the original channel
     template <typename U>
     friend auto make() -> std::tuple<chan<U>, port<U>>;
-
 
 };
 
